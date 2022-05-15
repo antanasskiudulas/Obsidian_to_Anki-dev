@@ -5,6 +5,7 @@ import { CachedMetadata } from 'obsidian'
 import * as c from './constants'
 
 import showdownHighlight from 'showdown-highlight'
+import { debug } from 'console'
 
 const ANKI_MATH_REGEXP:RegExp = /(\\\[[\s\S]*?\\\])|(\\\([\s\S]*?\\\))/g
 const HIGHLIGHT_REGEXP:RegExp = /==(.*?)==/g
@@ -148,10 +149,13 @@ export class FormatConverter {
 		//Extract the parts that are anki math
 		let math_matches: string[]
 		let inline_code_matches: string[]
-		let display_code_matches: string[]
+		let code_block_matches: string[]
+
 		const add_highlight_css: boolean = note_text.match(c.OBS_DISPLAY_CODE_REGEXP) ? true : false;
 		[note_text, math_matches] = this.censor(note_text, ANKI_MATH_REGEXP, MATH_REPLACE);
-		[note_text, display_code_matches] = this.censor(note_text, c.OBS_DISPLAY_CODE_REGEXP, DISPLAY_CODE_REPLACE);
+		[note_text, code_block_matches] = this.censor(note_text,
+			c.OBS_DISPLAY_CODE_REGEXP,
+			DISPLAY_CODE_REPLACE);
 		[note_text, inline_code_matches] = this.censor(note_text, c.OBS_CODE_REGEXP, INLINE_CODE_REPLACE);
 		if (cloze) {
 			if (highlights_to_cloze) {
@@ -163,7 +167,7 @@ export class FormatConverter {
 		note_text = this.formatLinks(note_text)
 		//Special for formatting highlights now, but want to avoid any == in code
 		note_text = note_text.replace(HIGHLIGHT_REGEXP, String.raw`<mark>$1</mark>`)
-		note_text = this.decensor(note_text, DISPLAY_CODE_REPLACE, display_code_matches, false)
+		note_text = this.decensor(note_text, DISPLAY_CODE_REPLACE, code_block_matches, false)
 		note_text = this.decensor(note_text, INLINE_CODE_REPLACE, inline_code_matches, false)
 		note_text = converter.makeHtml(note_text)
 		note_text = this.decensor(note_text, MATH_REPLACE, math_matches, true).trim()
@@ -176,8 +180,4 @@ export class FormatConverter {
 		}
 		return note_text
 	}
-
-
-
-
 }

@@ -291,8 +291,23 @@ export class AllFile extends AbstractFile {
     }
 
     scanNotes() {
+        debugger;
+        const code_block_with_ref_regexp = /```[\s\S]*?```[\s\S]\n*(?:\^\w{6})/g
+        const code_block_reference_regexp = /\!\[\[.*\#\^\w{6}\]\]/g
+        let code_blocks:string[] = this.file.match(code_block_with_ref_regexp);
+
         for (let note_match of this.file.matchAll(this.data.NOTE_REGEXP)) {
             let [note, position]: [string, number] = [note_match[1], note_match.index + note_match[0].indexOf(note_match[1]) + note_match[1].length]
+            const references:string[] = note.match(code_block_reference_regexp);
+
+            if(references != null)
+            {
+                for(const reference of references)
+                {
+                    note = note.replace(reference, code_blocks.find(block => block.includes(reference.match(/(?<=\!\[\[.*\#\^).*(?=\]\])/g)[0])).match(c.OBS_DISPLAY_CODE_REGEXP)[0]);
+                }
+            }
+
             // That second thing essentially gets the index of the end of the first capture group.
             let parsed = new Note(
                 note,
@@ -307,6 +322,7 @@ export class AllFile extends AbstractFile {
                 this.data,
                 this.data.add_context ? this.getContextAtIndex(note_match.index) : ""
             )
+
             if (parsed.identifier == null) {
                 // Need to make sure global_tags get added
                 parsed.note.tags.push(...this.global_tags.split(TAG_SEP))
